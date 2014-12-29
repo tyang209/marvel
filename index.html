@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.barSharedAppearances{
+
+
+	font: 10px sans-serif;
+  background-color: steelblue;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: black;
+}
+</style>
+
+<body>
+<script src="/jquery/jquery-2.1.3.min.js"></script>
+<script src="/d3/d3.min.js"></script>
+<script>
+
+
+var width = 960,
+    height = 600,
+    characterID = null;
+
+
+d3.json("marvel_characters.json",function(error,json){
+	if (error) return console.warn(error);
+	var dropDown = d3.select("div").append("select").attr("id","characterSelect");
+	var options = dropDown.selectAll("option")
+						.data(json)
+						.enter()
+						.append("option");
+
+	options.text(function (d) { return d.CharacterName;})
+		.attr("id", function (d) {return d.CharacterID;});
+
+d3.select('#UpdateButton')
+	.on("click",function(){
+		var characterIndex = d3.select("#characterSelect")[0][0].selectedIndex;
+		var characterArray =d3.select("#characterSelect")[0][0][characterIndex]
+		var characterName = characterArray.text
+		console.log(characterName)
+		update(characterName)
+	})
+
+function update(characterName){
+
+
+
+	d3.json("character_comics.json",function(error,data){
+
+		var nestedData = d3.nest()
+					// .key(function(d){ return d.CharacterID_x})
+					.key(function(d){ return d.CharacterName_x})
+					.key(function(d){ return d.CharacterName_y})
+					.rollup(function(leaves){ return leaves.length})
+					.entries(data)
+
+		var filteredData = nestedData.filter(function(d){return d.key==characterName; });
+
+		var chart = d3.select("#container").selectAll("div")
+				.data(filteredData)
+				.enter()
+				.append("div")
+				.attr("id","charChart");
+				
+
+		var bars = chart.selectAll("div")
+					.data(function(d){return d.values;})
+					.enter()
+					.append("div")
+					.text(function(d){return d.key;})
+					.attr("class","barSharedAppearances")
+					.style("width",function(d){return d.values *10 +"px"});
+
+		});
+
+
+}
+
+
+
+});
+</script>
+
+
+<div id="container">   
+    <button id="UpdateButton">Update</button>
+</div> 
+</body>
